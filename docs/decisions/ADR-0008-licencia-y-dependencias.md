@@ -1,6 +1,6 @@
 # ADR-0008: Licencia del proyecto y política de dependencias
 
-- **Estado:** Propuesto — requiere decisión del propietario
+- **Estado:** Propuesto — decisión redactada, pendiente de aprobación del responsable del proyecto
 - **Fecha:** 2026-11-19
 - **Ámbito:** Código fuente, bibliotecas, componentes gráficos, herramientas, recursos y distribución de PARALLAX.
 - **Documentación complementaria:** `security/dependencias.md`
@@ -319,19 +319,85 @@ Este ADR deberá revisarse si:
 - Se introduce un modelo de distribución comercial diferente.
 - Aparecen obligaciones legales nuevas que afecten al proyecto.
 
-## 14. Decisión pendiente del propietario
+## 14. Decisión
 
-La recomendación es:
+PARALLAX adoptará una política de licencias por categoría de artefacto.
 
-- **Compositor, Shell y aplicaciones oficiales:** GPL-3.0-or-later.
-- **Bibliotecas reutilizables `px-*`:** MIT OR Apache-2.0.
-- **Documentación:** CC BY-SA 4.0.
-- **Dependencias:** auditoría obligatoria mediante `security/dependencias.md`.
+### 14.1 Componentes ejecutables del sistema
 
-La aprobación definitiva corresponde al propietario del proyecto.
+Licencia: `GPL-3.0-or-later`.
+
+Se aplica a:
+
+- `parallax-compositor`.
+- `parallax-shell`.
+- `parallax-lock`.
+- Aplicaciones nativas oficiales.
+- Servicios propios del sistema.
+- Herramientas oficiales distribuidas como parte del producto.
+
+Los componentes derivados o integrados deberán respetar las obligaciones de licencia correspondientes.
+
+### 14.2 Bibliotecas reutilizables
+
+Licencia: `MIT OR Apache-2.0`.
+
+Se aplica a crates `px-*` que sean bibliotecas independientes, reutilizables y no estén sujetos a obligaciones incompatibles de componentes de terceros.
+
+Cada crate declarará expresamente su licencia en `Cargo.toml` y conservará los avisos de copyright correspondientes.
+
+La licencia permisiva no constituye una excepción automática para código derivado de componentes GPL ni permite ignorar obligaciones de dependencias.
+
+### 14.3 Documentación
+
+Licencia: `CC-BY-SA-4.0`.
+
+Se aplica a la documentación original publicada por el proyecto, salvo que un documento indique expresamente otra licencia.
+
+Los fragmentos de terceros conservarán sus atribuciones y licencias originales.
+
+### 14.4 Recursos gráficos y multimedia
+
+Cada recurso tendrá licencia individual documentada.
+
+Se mantendrá un inventario de procedencia y licencia en:
+
+`design-system/assets/manifest.toml`
+
+No se incorporarán assets sin procedencia y autorización de uso verificables.
+
+### 14.5 Dependencias externas
+
+Cada dependencia deberá registrar:
+
+- Nombre y versión.
+- Licencia SPDX.
+- Procedencia.
+- Uso dentro del sistema.
+- Tipo de integración.
+- Compatibilidad con las licencias del componente consumidor.
+- Obligaciones de redistribución.
+- Riesgos de mantenimiento y seguridad.
+
+No se presumirá compatibilidad por el simple hecho de que una dependencia sea de código abierto.
+
+Las dependencias GPL, LGPL, AGPL, MPL, propietarias o con excepciones especiales requerirán revisión específica cuando corresponda.
+
+### 14.6 Distribución
+
+Los paquetes y repositorios oficiales deberán incluir los avisos de licencia, atribuciones y fuentes correspondientes a las obligaciones aplicables.
+
+Se mantendrá un SBOM en formato CycloneDX.
+
+### 14.7 Política de cambios
+
+La modificación de la política de licencias requiere un nuevo ADR o una revisión formal de este ADR.
+
+**Estado:** Propuesto, pendiente de aprobación del responsable del proyecto.
 
 ## 15. Principio rector
 
 **PARALLAX debe proteger la libertad de su entorno de escritorio sin impedir que sus componentes independientes puedan reutilizarse en otros proyectos.**
 
 La licencia no será una decisión improvisada por dependencia: será una política transversal de arquitectura, desarrollo y distribución.
+> **Nota de Tarea 010 (propuesta pendiente, no normativa).** Dependencias candidatas surgidas de las revisiones 5–10, **pendientes de revisión formal de licencia y de entrada en `security/dependencias.md`**: crate `libc` (`MIT OR Apache-2.0` según docs.rs 0.2.191; uso: `posix_spawn`, `addclosefrom_np`, `close_range`, `flock`) o binding `extern "C"` propio a glibc (LGPL-2.1-or-later, enlace dinámico: compatibilidad pendiente de revisión); `libpolkit-agent-1` + GLib (D-16). Ninguna está aprobada. Ver [consolidación §4](../project-management/consolidacion-fase0.md).

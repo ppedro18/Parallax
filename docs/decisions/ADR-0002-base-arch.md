@@ -319,3 +319,4 @@ Este ADR deberá revisarse cuando:
 La distribución no debe depender de actualizaciones impredecibles ni delegar completamente su estabilidad en terceros.
 
 Arch Linux será el punto de partida tecnológico. La infraestructura de paquetes, confianza y publicación será responsabilidad de PARALLAX.
+> **Nota de Tarea 010 (propuesta pendiente, no normativa).** La propuesta vigente de creación de roles (D-27) usa `posix_spawn_file_actions_addclosefrom_np`, extensión de glibc (≥ 2.34 [H]; Arch: 2.44 [V]). Si se aprueba, PARALLAX v1 **depende explícitamente de glibc** y musl queda fuera de alcance. Verificación pendiente: T-GLIBC. Estado de este ADR sin cambios. Ver [consolidación §4.1 D-27](../project-management/consolidacion-fase0.md).

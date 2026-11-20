@@ -252,3 +252,4 @@ El reinicio de componentes debe conservar las condiciones de seguridad.
 7. Definir tratamiento de notificaciones sensibles.
 
 **Estado: Propuesto. Pendiente de aprobación.**
+> **Nota de Tarea 010 (propuesta pendiente, no normativa).** greetd lanza el greeter como `command` de `[default_session]` (usuario `greeter`) y lo relanza cuando termina la sesión de usuario [V greetd(5)/(1) 0.10.3-2]. Propuesta de sesión (D-28, D-29): comando de sesión propio que adquiere `flock(LOCK_EX|LOCK_NB)` sobre `$XDG_RUNTIME_DIR/parallax/session.lock` (`O_CLOEXEC`, comprobación de propietario, permisos, tipo y symlinks), limpia unidades residuales tras adquirirlo, arranca `parallax-session.target` y mantiene el fd hasta el final. Garantía: una instancia PARALLAX por usuario; la convivencia con otros entornos no está soportada en v1. Comunicación del rechazo: D-30. Ver [consolidación §4.1](../project-management/consolidacion-fase0.md).

@@ -23,6 +23,8 @@
 | Thumbnailer | Parser explotable (imágenes/PDF) | Subproceso con seccomp, sin red, sin `$HOME` escritura (Landlock) |
 | D-Bus | Llamadas no autorizadas | Políticas `busconfig` restrictivas + polkit por método + verificación de `peer credentials` |
 
+> **Nota de Tarea 010 (propuesta pendiente, D-22).** Límites frente a procesos del mismo UID: el socket de rol es una **capacidad Wayland, no un aislamiento**. Un proceso del mismo usuario puede matar roles, modificar `$HOME` y la configuración, y poseer nombres D-Bus libres (en el bus de sesión las peer credentials solo prueban el UID [V]). `PR_SET_DUMPABLE=0` y Yama (`ptrace_scope=1`) limitan `ptrace`/`pidfd_getfd`, pero no son un sandbox; root y `CAP_SYS_PTRACE` quedan fuera del modelo. Higiene de descriptores y entorno propuesta: ver nota en ADR-0015 y [consolidación §4.1](../project-management/consolidacion-fase0.md).
+
 ## Acciones polkit (iniciales)
 `org.parallax.update.apply`, `.update.rollback`, `org.parallax.recovery.snapshot`, `.recovery.restore`, `org.parallax.hardware.install-driver`, `org.parallax.files.change-ownership`, `org.parallax.settings.system` (zona horaria, hostname — delegando en `timedated`/`hostnamed`).
 

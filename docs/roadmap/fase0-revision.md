@@ -1,501 +1,72 @@
-# ADR-0009: Actualizaciones transaccionales y recuperación del sistema
+# Revisión de Fase 0 — Arquitectura y especificación
 
-- **Estado:** Propuesto
-- **Fecha:** 2026-11-19
-- **Ámbito:** Sistema base, paquetes, kernel, initramfs, configuración y recuperación del arranque.
-- **Documentación complementaria:** `architecture/actualizacion-recuperacion.md`
-- **Relacionado con:** ADR-0002 (Base Arch), ADR-0008 (Licencias).
+- **Estado de la fase:** `IN_PROGRESS` (no aprobada).
+- **Última actualización:** 2026-11-19.
+- **Fuentes:** auditoría de base, revisiones [1](../project-management/base-audit.md), [2](../project-management/base-audit-r2.md) y [3](../project-management/base-audit-r3.md) (vigente).
+- **Naturaleza:** documento descriptivo de seguimiento. No acepta ADR, no cambia estados y no sustituye la decisión del propietario (`roadmap.md §7`).
 
-## 1. Contexto
+> Historial: hasta 2026-11-19 este archivo contenía por error una copia íntegra de `decisions/ADR-0009-actualizaciones.md` (hallazgo P-01). ADR-0009 sigue siendo la única fuente de esa decisión.
 
-PARALLAX utilizará una base de paquetes derivada de Arch Linux, administrada mediante pacman y repositorios firmados.
+## 1. Resumen
 
-El modelo rolling tradicional implica que una actualización puede introducir incompatibilidades entre paquetes, kernel, bibliotecas, controladores o componentes del entorno.
+La documentación de Fase 0 cubre visión, arquitectura por capas, IPC, eventos, servicios, hardware, actualizaciones y recuperación, riesgos, sistema de diseño, 13 especificaciones, benchmarks, estrategia de pruebas y 15 ADR. Ningún ADR está aceptado. La fase **no puede cerrarse** todavía; los bloqueos están en §4.
 
-PARALLAX necesita controlar cuándo se incorporan actualizaciones y disponer de un mecanismo de recuperación ante:
+## 2. Estado de los ADR
 
-- Actualizaciones defectuosas.
-- Incompatibilidades entre paquetes.
-- Errores durante una transacción de pacman.
-- Fallos del kernel o initramfs.
-- Problemas de configuración.
-- Interrupciones de energía durante una actualización.
-- Fallos durante el primer arranque después de actualizar.
+Todos en estado `Propuesto`. Clasificación propuesta para Gate 0 (base-audit-r3 §7), pendiente de aprobación del propietario:
 
-La recuperación deberá permitir volver a un estado anterior conocido sin depender necesariamente de un medio de instalación externo.
+| ADR | Tema | Grupo propuesto | Pendiente principal |
+|---|---|---|---|
+| 0001 | Rust nativo | Necesario para cerrar Fase 0 | Aprobación |
+| 0002 | Base Arch (snapshot ALA) | Necesario | Arquitectura de destino; P-02 |
+| 0007 | IPC híbrido | Necesario (principio) | Contratos XML y benchmarks como condiciones |
+| 0008 | Licencias (§14, política L1) | Necesario | Aprobación; DCO/CLA y `px-ui` separados |
+| 0013 | Entorno de desarrollo | Necesario | Reescritura (P-03) y decisión P-02 |
+| 0015 | Autorización Wayland | Necesario (seguridad) | Reglas normativas fuera de agentes (P-12) |
+| 0003 | Smithay | Aceptable con spike en Fase 1 | Spike winit + DRM/KMS |
+| 0004 | WM en compositor | Aceptable con spike | Prototipo `px-wm` |
+| 0005 | Toolkit UI | Gate 1 | Benchmark |
+| 0009 | Actualizaciones | Aceptable con spike | `storage.md`; spike Btrfs + systemd-boot |
+| 0006 | Shell un proceso | Diferible (Fase 3) | — |
+| 0010 | Agente polkit | Diferible (revisar antes de Gate 2) | — |
+| 0011 | Terminal | Diferible (Fase 4) | Spike |
+| 0012 | Xwayland | Diferible (Fase 2) | Validación |
+| 0014 | Delegación cgroups | Diferible (Fase 5, modo observación) | P-12 |
 
-El sistema distinguirá entre actualización, recuperación del sistema y restauración de datos personales.
+## 3. Criterios de aceptación de Fase 0 (`roadmap.md`)
 
-## 2. Opciones evaluadas
-
-| Alternativa | Ventajas | Consideraciones |
+| Criterio | Estado | Evidencia / pendiente |
 |---|---|---|
-| pacman + Btrfs + boot counting | Compatible con Arch, recuperación mediante snapshots | Requiere diseñar correctamente subvolúmenes y arranque |
-| Imágenes A/B inmutables | Actualización por generaciones y rollback controlado | Mayor complejidad de construcción y distribución |
-| OSTree | Versionado de despliegues y actualización basada en árboles | Mayor adaptación del ecosistema Arch |
+| Todos los ADR iniciales están revisados | Parcial | Revisados en la auditoría; sin aprobaciones registradas |
+| Decisiones pendientes identificadas | Sí | base-audit-r3 §9–§10 |
+| Componentes y responsabilidades definidos | Sí | `architecture/arquitectura.md §2`, AGENTS.md |
+| Interfaces entre subsistemas documentadas | Parcial | `ipc.md`, `eventos.md`; faltan `architecture/dbus/*.xml` (P-06) |
+| Especificación de rendimiento | Sí | `design-system/RENDERING_PERFORMANCE.md`, `benchmarks/metodologia.md` |
+| Metodología de benchmark | Sí | `benchmarks/metodologia.md`; hardware sin identificar (P-21) |
+| Estrategia de pruebas | Sí | `roadmap/estrategia-pruebas.md` |
+| Agentes con instrucciones y límites | Sí, con reserva | `.claude/agents/`; contienen reglas normativas que deberían estar en `docs/` (P-12) |
 
-## 3. Decisión
+Las 14 verificaciones transversales de `criterios-aceptacion.md` siguen sin marcar.
 
-Se adopta una estrategia evolutiva.
+## 4. Bloqueos de cierre
 
-### Versión 1
+1. Aceptación de la política de licencias (ADR-0008 §14).
+2. Entorno de referencia y CI (P-02) → reescritura de ADR-0013 y arquitectura de destino en ADR-0002.
+3. Aceptación de ADR-0001, 0007 y 0015 (tras P-12).
+4. Checklist de cierre y lista de ADR del gate (P-07, P-08).
+5. Estructura del workspace y nomenclatura (P-09, P-10, P-11).
+6. Normalización de estados y aprobaciones de ADR (P-20).
 
-- pacman como gestor de paquetes.
-- Repositorios firmados de PARALLAX.
-- Btrfs obligatorio como sistema de archivos de la raíz.
-- Snapshots previos y posteriores a las transacciones.
-- systemd-boot como gestor de arranque.
-- Boot counting para nuevas entradas.
-- Validación del arranque satisfactorio.
-- Rollback automático cuando se agoten los intentos permitidos.
-- Conservación de una generación anterior conocida como funcional.
+No bloquean el cierre de Fase 0 (sí Gate 1/2): identificación de hardware real (P-21, P-22), ADR-0005, DCO/CLA. Excepción propuesta: contratos D-Bus XML y `storage.md` al inicio de Fase 1 (P-06).
 
-### Versión 2
+## 5. Problemas abiertos
 
-Se evaluará una arquitectura de imágenes A/B inmutables, utilizando tecnologías como `mkosi` y `systemd-sysupdate`.
+Ver base-audit-r3 §1 y §8 y la tabla de rev. 2 §B. Resueltos: P-01 (este documento), P-04 (`security/dependencias.md`), P-25.
 
-OSTree permanecerá como alternativa si los resultados justifican su adopción.
+## 6. Decisiones reservadas al propietario
 
-La evolución no deberá obligar a cambiar el modelo de paquetes de manera prematura.
+Ver base-audit-r3 §9.2 (P-xx) y, para las decisiones D-01 a D-30 de las revisiones técnicas 4–10, el registro único en [`consolidacion-fase0.md` §4](../project-management/consolidacion-fase0.md).
 
-## 4. Sistema de archivos obligatorio
+## 7. Revisiones técnicas complementarias (4–10)
 
-La instalación oficial de PARALLAX utilizará Btrfs como sistema de archivos de la raíz.
-
-No se soportará ext4 como raíz en la primera versión.
-
-La decisión se justifica por la necesidad de crear snapshots y restaurar generaciones del sistema.
-
-### 4.1 Distribución de subvolúmenes
-
-Se utilizará inicialmente una estructura similar a:
-
-```text
-BTRFS
-│
-├── @
-│   └── /
-│
-├── @home
-│   └── /home
-│
-├── @snapshots
-│   └── /snapshots
-│
-├── @var_log
-│   └── /var/log       (evaluar)
-│
-└── @var_cache
-    └── /var/cache     (evaluar)
-
-EFI System Partition
-└── /efi
-```
-
-La estructura definitiva deberá definirse en el instalador y documentarse en `architecture/storage.md`.
-
-### 4.2 Reglas
-
-- `@` contendrá el sistema base y la base de datos de paquetes.
-- `/var/lib/pacman` deberá permanecer dentro del subvolumen raíz.
-- `/home` será independiente de los snapshots del sistema.
-- `/snapshots` almacenará las generaciones de recuperación.
-- La partición EFI tendrá una estrategia independiente de respaldo.
-- Los subvolúmenes adicionales deberán tener una política explícita de snapshot y recuperación.
-
-No se separará todo `/var` automáticamente.
-
-Separar `/var` completo puede dejar fuera del rollback archivos fundamentales para la consistencia del sistema, incluyendo el estado de pacman.
-
-Los datos persistentes de servicios y aplicaciones deberán evaluarse individualmente.
-
-### 4.3 Limitación de snapshots anidados
-
-Un snapshot de Btrfs no incorpora automáticamente los subvolúmenes anidados.
-
-Por tanto, el instalador y el gestor de actualizaciones deberán conocer la estructura real del sistema de archivos.
-
-No se podrá asumir que un snapshot de `@` contiene todos los datos montados debajo de `/`.
-
-## 5. Arquitectura de actualización V1
-
-La actualización será administrada mediante un servicio propio de PARALLAX.
-
-Nombre conceptual:
-
-`px-update`
-
-Sus responsabilidades serán:
-
-- Consultar actualizaciones disponibles.
-- Verificar repositorios y firmas.
-- Resolver dependencias.
-- Comprobar espacio disponible.
-- Crear snapshots.
-- Ejecutar transacciones de pacman.
-- Gestionar kernels e initramfs.
-- Generar entradas de arranque.
-- Supervisar el estado de actualización.
-- Registrar resultados.
-- Preparar rollback cuando sea necesario.
-
-Pacman continuará siendo responsable de instalar y retirar paquetes.
-
-`px-update` no implementará un gestor de paquetes alternativo.
-
-## 6. Ciclo de actualización
-
-Toda actualización del sistema seguirá una secuencia controlada.
-
-### Fase 1 — Preparación
-
-Antes de modificar el sistema:
-
-1. Verificar la disponibilidad del repositorio.
-2. Validar firmas y metadatos.
-3. Resolver dependencias.
-4. Comprobar espacio libre.
-5. Verificar la existencia de una generación anterior recuperable.
-6. Comprobar que no existe otra transacción activa.
-7. Registrar el identificador de actualización.
-
-Si falla una validación crítica, la actualización no comenzará.
-
-### Fase 2 — Snapshot previo
-
-Crear un snapshot del subvolumen raíz antes de ejecutar pacman.
-
-Este snapshot representará el último estado conocido anterior a la actualización.
-
-Metadatos asociados:
-
-- Identificador de actualización.
-- Fecha.
-- Snapshot de origen.
-- Versión anterior del sistema.
-- Versión objetivo.
-- Motivo de actualización.
-- Estado de la transacción.
-
-El snapshot previo deberá conservarse hasta que la nueva generación haya sido validada.
-
-### Fase 3 — Transacción de paquetes
-
-Ejecutar pacman utilizando exclusivamente repositorios autorizados.
-
-Reglas:
-
-- No permitir transacciones concurrentes.
-- Registrar la salida y los errores.
-- No interrumpir deliberadamente pacman.
-- No modificar manualmente la base de datos de paquetes.
-- Mantener el snapshot previo durante toda la operación.
-
-Las actualizaciones del sistema no se considerarán completadas hasta que se hayan validado también los artefactos de arranque.
-
-### Fase 4 — Preparación del arranque
-
-Después de instalar los paquetes:
-
-1. Generar o actualizar initramfs.
-2. Instalar o actualizar el kernel.
-3. Verificar los artefactos generados.
-4. Actualizar las entradas de systemd-boot.
-5. Mantener disponible la entrada anterior.
-6. Preparar el contador de intentos de arranque.
-7. Registrar la nueva generación como candidata.
-
-La partición EFI no está protegida por el snapshot de Btrfs.
-
-Por tanto, los kernels, initramfs, UKI y entradas de arranque deberán disponer de una estrategia propia de conservación y recuperación.
-
-Se recomienda evaluar Unified Kernel Images (UKI) para simplificar la relación entre kernel, initramfs y parámetros de arranque.
-
-No se eliminará una entrada anterior funcional hasta validar la nueva generación.
-
-### Fase 5 — Reinicio y validación
-
-La nueva generación se iniciará como candidata.
-
-Se utilizará boot counting de systemd-boot.
-
-El número de intentos deberá configurarse explícitamente y ser pequeño, evitando ciclos de arranque indefinidos.
-
-Después de iniciar el sistema se ejecutarán comprobaciones de salud.
-
-Entre ellas:
-
-- Disponibilidad de systemd.
-- Estado del sistema de archivos.
-- Disponibilidad de servicios críticos.
-- Inicialización del compositor.
-- Disponibilidad del entorno gráfico.
-- Ausencia de fallos críticos definidos por PARALLAX.
-
-La validación deberá ejecutarse mediante unidades y dependencias de systemd.
-
-El arranque solo se considerará satisfactorio cuando se alcance el punto de finalización configurado y se confirme la salud mínima del sistema.
-
-La integración deberá evaluarse mediante:
-
-- `boot-complete.target`.
-- `systemd-bless-boot`.
-- `systemd-boot-check-no-failures`, cuando corresponda.
-
-No se marcará una generación como buena simplemente porque el kernel haya comenzado a ejecutarse.
-
-### Fase 6 — Confirmación
-
-Si las comprobaciones terminan correctamente:
-
-- Marcar la entrada como funcional.
-- Confirmar la nueva generación.
-- Registrar el resultado.
-- Conservar los snapshots según la política de retención.
-- Mantener al menos una generación anterior recuperable.
-
-La confirmación de arranque no implica que los datos personales o las bases de datos de aplicaciones hayan sido verificados.
-
-## 7. Rollback automático
-
-Si la nueva generación agota sus intentos de arranque sin completar la validación, systemd-boot deberá seleccionar la entrada anterior disponible.
-
-La generación anterior deberá apuntar a un snapshot recuperable.
-
-El mecanismo de rollback deberá asegurar que el sistema arranque utilizando una vista coherente de:
-
-- Sistema de archivos.
-- Base de datos de pacman.
-- Configuración.
-- Kernel.
-- Initramfs.
-- Parámetros de arranque.
-
-No bastará con seleccionar un snapshot desde el menú de arranque.
-
-El procedimiento deberá preparar un subvolumen de recuperación arrancable y mantener correctamente sus referencias.
-
-Se evaluará el uso de una operación equivalente a `snapper rollback` o de un mecanismo propio que cree un nuevo subvolumen de trabajo a partir del snapshot seleccionado.
-
-La implementación deberá distinguir entre:
-
-- Snapshot de solo lectura.
-- Subvolumen de recuperación.
-- Subvolumen raíz activo.
-
-No se deberá intentar ejecutar un sistema completo de escritura sobre un snapshot de solo lectura sin un mecanismo explícito que proporcione una raíz de escritura.
-
-## 8. Recuperación manual
-
-El usuario deberá disponer de una opción de recuperación desde el menú de arranque.
-
-Esta opción permitirá seleccionar una generación anterior.
-
-La interfaz de recuperación deberá mostrar:
-
-- Fecha.
-- Identificador.
-- Versión del sistema.
-- Motivo del snapshot.
-- Resultado de validación.
-- Espacio ocupado.
-
-Las operaciones de recuperación deberán ser explícitas y registrar sus resultados.
-
-## 9. Tratamiento de `/etc` y `/var`
-
-### 9.1 `/etc`
-
-`/etc` formará parte del snapshot del sistema.
-
-Se deberá tener en cuenta que los paquetes pueden introducir archivos nuevos, modificar configuraciones y ejecutar scripts de instalación.
-
-Las configuraciones modificadas por el usuario deberán tener mecanismos de comparación y recuperación.
-
-No se sobrescribirán silenciosamente configuraciones personales al restaurar una generación.
-
-### 9.2 `/var`
-
-El tratamiento de `/var` será una decisión central de la arquitectura de almacenamiento.
-
-Para V1:
-
-- La base de datos de pacman permanecerá en la raíz.
-- Los datos de estado esenciales para el sistema deberán mantener coherencia con la generación.
-- Los directorios de caché podrán separarse cuando exista una justificación.
-- Los datos de aplicaciones deberán evaluarse individualmente.
-- Los servicios con bases de datos deberán tener mecanismos de recuperación propios.
-
-No se garantizará la reversión automática de todas las bases de datos de aplicaciones mediante snapshots del sistema.
-
-Las migraciones de esquemas deberán ser compatibles con la política de rollback o disponer de una estrategia específica.
-
-## 10. Protección de la partición EFI
-
-La partición EFI no forma parte del sistema de snapshots de Btrfs cuando se encuentra en un sistema de archivos independiente.
-
-Se deberá implementar una estrategia de actualización segura de artefactos de arranque.
-
-Requisitos:
-
-- Conservar al menos una entrada funcional anterior.
-- No sobrescribir el único kernel arrancable.
-- Validar los archivos antes de modificar las entradas activas.
-- Mantener correspondencia entre la generación y sus artefactos.
-- Evitar referencias a kernels eliminados.
-- Mantener espacio suficiente en la partición EFI.
-
-Los cambios de kernel y bootloader deberán probarse con interrupciones simuladas.
-
-## 11. Retención y limpieza
-
-Los snapshots deberán tener una política de retención.
-
-Se distinguirán:
-
-- Snapshots anteriores a actualizaciones.
-- Snapshots posteriores a actualizaciones.
-- Generaciones confirmadas.
-- Generaciones de recuperación.
-- Snapshots manuales.
-
-La limpieza no podrá eliminar:
-
-- La generación activa.
-- La última generación funcional.
-- Una generación pendiente de validación.
-- Artefactos necesarios para arrancar una generación conservada.
-
-Se deberán establecer límites por cantidad y espacio disponible.
-
-La limpieza deberá ser conservadora cuando el almacenamiento esté cerca de su capacidad.
-
-Los snapshots no sustituyen una copia de seguridad externa.
-
-## 12. Fallos e interrupciones
-
-La implementación deberá contemplar:
-
-| Fallo | Comportamiento esperado |
-|---|---|
-| Error al descargar paquetes | No iniciar transacción |
-| Firma inválida | Rechazar actualización |
-| Espacio insuficiente | Cancelar antes de modificar |
-| Error durante pacman | Conservar snapshot previo y entrar en recuperación |
-| Corte eléctrico durante pacman | Permitir arrancar la generación anterior |
-| Error al generar initramfs | No promover la generación |
-| Kernel defectuoso | Utilizar entrada anterior |
-| Fallo de servicios críticos | No confirmar arranque |
-| Fallo del Shell | No confundirlo automáticamente con un fallo del kernel |
-| Snapshot dañado | Utilizar otra generación validada o recuperación externa |
-
-La recuperación no deberá depender de que el sistema actualizado pueda ejecutar herramientas de recuperación.
-
-Cuando sea necesario, deberá existir un mecanismo desde initramfs o desde un entorno de rescate.
-
-## 13. Integridad y seguridad
-
-- Todos los repositorios de PARALLAX deberán estar firmados.
-- Los paquetes deberán verificarse antes de instalarse.
-- Las operaciones de actualización requerirán privilegios controlados.
-- El estado de cada actualización deberá registrarse.
-- Los snapshots no se considerarán copias de seguridad inmutables frente a un atacante con privilegios de administrador.
-- La recuperación deberá verificar que los artefactos de arranque corresponden a la generación seleccionada.
-- Los procesos de actualización no deberán aceptar paquetes de repositorios no autorizados.
-
-## 14. Evaluación de V2: imágenes A/B inmutables
-
-Al finalizar la Fase 6 se evaluará la migración hacia un modelo de imágenes A/B.
-
-La propuesta consistirá en mantener dos generaciones independientes:
-
-- Slot A: sistema activo.
-- Slot B: sistema candidato o de recuperación.
-
-El actualizador preparará la generación inactiva, validará sus artefactos y configurará el siguiente arranque.
-
-La generación anterior permanecerá disponible hasta confirmar el arranque de la nueva.
-
-Se evaluarán:
-
-- `mkosi`.
-- `systemd-sysupdate`.
-- Unified Kernel Images.
-- Gestión de estado persistente.
-- Migraciones de configuración.
-- Espacio necesario para dos generaciones.
-- Actualizaciones interrumpidas.
-- Recuperación automática.
-- Compatibilidad con el ecosistema Arch.
-
-OSTree seguirá siendo una alternativa de evaluación, no una decisión de implementación.
-
-La migración a A/B solo se aprobará si aporta mejoras demostrables de seguridad, consistencia, mantenimiento o experiencia de actualización.
-
-## 15. Benchmark y criterios de aceptación
-
-Antes de considerar V1 estable deberán superarse pruebas reproducibles.
-
-### Escenarios
-
-1. Actualización normal.
-2. Actualización de kernel.
-3. Actualización de compositor y Shell.
-4. Interrupción eléctrica durante una transacción.
-5. Fallo al generar initramfs.
-6. Entrada de arranque defectuosa.
-7. Fallo de comprobación de salud.
-8. Rollback automático.
-9. Rollback manual.
-10. Restauración de configuración.
-11. Limpieza de snapshots.
-12. Recuperación con poco espacio libre.
-
-### Criterios de aceptación
-
-- La instalación oficial exige Btrfs en la raíz.
-- Cada transacción tiene un snapshot previo recuperable.
-- La generación anterior permanece arrancable.
-- La actualización no se confirma antes de superar la comprobación de salud.
-- El sistema puede volver a una generación anterior.
-- El compositor no depende del éxito de la actualización del Shell para mantener la integridad del sistema.
-- Los cambios de kernel y EFI tienen protección independiente.
-- La base de datos de pacman permanece coherente con la generación activa.
-- La política de `/etc`, `/var` y `/home` está documentada.
-- Los escenarios de interrupción y rollback se prueban automáticamente.
-
-## 16. Consecuencias
-
-### Positivas
-
-- Compatibilidad con el ecosistema Arch.
-- Recuperación ante actualizaciones defectuosas.
-- Control de versiones del sistema instalado.
-- Menor dependencia de medios externos para recuperar fallos habituales.
-- Conservación de una generación funcional.
-- Base para evolucionar hacia actualizaciones A/B.
-
-### Negativas
-
-- Btrfs obligatorio como raíz.
-- Mayor complejidad del instalador.
-- Gestión adicional de snapshots y espacio.
-- Necesidad de coordinar Btrfs, pacman, initramfs y systemd-boot.
-- La recuperación de datos persistentes requiere políticas independientes.
-- Los snapshots no sustituyen copias de seguridad.
-
-## 17. Revisión
-
-Este ADR se revisará al finalizar la Fase 6 utilizando datos de:
-
-- Fallos reales de actualización.
-- Tiempo de recuperación.
-- Consumo de almacenamiento.
-- Incidencias de arranque.
-- Complejidad de mantenimiento.
-- Fiabilidad del rollback.
-- Coste de mantener el modelo basado en pacman.
-
-## 18. Principio rector
-
-**Una actualización no se considera exitosa cuando termina de instalar paquetes; se considera exitosa cuando PARALLAX demuestra que puede arrancar y funcionar correctamente con la nueva generación.**
+Consolidadas en [`project-management/consolidacion-fase0.md`](../project-management/consolidacion-fase0.md) (Tarea 010). Ninguna cambia el estado de la fase ni de los ADR. Pruebas derivadas: `spikes.md` §T, todas sin autorizar. Investigaciones posteriores (Tareas 012–023): [`project-management/audits/fase-0/INDEX.md`](../project-management/audits/fase-0/INDEX.md).

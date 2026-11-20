@@ -109,5 +109,15 @@ systemd reinicia `parallax-shell` (`Restart=always`, `RestartSec=200ms`, límite
 ### Caída del compositor
 Las apps Wayland pierden conexión (limitación del protocolo). Mitigación: (a) compositor sin estado complejo propio de apps, (b) `px-wm` probado por fuzzing, (c) restauración de sesión: apps PARALLAX guardan estado y se relanzan; layout se persiste cada 30 s y al cambiar.
 
+> **Nota de Tarea 010 (propuestas pendientes; el texto anterior sigue siendo el contrato vigente).** Las revisiones 6–10 proponen, sin aprobación:
+> - **Greeter:** no es `parallax-greeter.service`; greetd lo ejecuta como `command` de `[default_session]` [V greetd(5)] (C-38).
+> - **Compositor:** `parallax-compositor.service` con `PartOf=graphical-session.target`, deseado por `parallax-session.target` (C-34).
+> - **Arranque:** greetd → comando de sesión propio (D-28) con exclusión `flock` (D-29) → `parallax-session.target` (`BindsTo=graphical-session.target`).
+> - **Shell y roles:** los lanza y reinicia el compositor (intermediario + scope transitorio), no systemd (D-18, C-29).
+> - **Apertura de apps:** crate común de lanzamiento, sin `Session1.Launch` (D-03, C-20).
+> - **Caída del compositor (política X, D-24, recomendación no aprobada):** se propone que termine la sesión gráfica de PARALLAX y se vuelva al greeter; solo se detendría lo que PARALLAX lanza con `PartOf=graphical-session.target`. La propagación de la parada, el fin del comando de sesión y el retorno al greeter **no están demostrados** (escenarios y huecos, incluida la caída del comando de sesión: consolidación §4.3, RV-37, T-SESSION-FAIL). Servicios D-Bus, apps `DBusActivatable` de terceros y unidades de usuario ajenas pueden sobrevivir hasta que terminen la sesión logind o el user manager. La restauración ocurre en la sesión nueva.
+>
+> Trazabilidad completa en [`project-management/consolidacion-fase0.md`](../project-management/consolidacion-fase0.md).
+
 ## 6. Decisiones abiertas
 Ver `docs/decisions/` — ADR en estado `Propuesto` requieren aprobación; ver resumen en `docs/roadmap/fase0-revision.md`.

@@ -328,3 +328,6 @@ Cada revisión debe registrar:
 - Riesgos pendientes.
 
 **Estado del registro: PROPUESTO — PENDIENTE DE APROBACIÓN DE FASE 0.**
+## Riesgos de las revisiones técnicas 5–10
+
+Los riesgos identificados en las revisiones complementarias se registran como **RV-NN** en [`project-management/consolidacion-fase0.md` §5](../project-management/consolidacion-fase0.md), con su correspondencia a R01–R28. Los identificadores `R-NN` de los informes de revisión **no** equivalen a los `RNN` de esta tabla.

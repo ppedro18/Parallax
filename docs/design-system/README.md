@@ -1,6 +1,6 @@
 # Sistema de diseño PARALLAX
 
-Fuente única de verdad visual y de interacción para compositor, shell y aplicaciones nativas. Sustituye a `docs/design/sistema-diseno.md`.
+Fuente única de verdad visual y de interacción para compositor, shell y aplicaciones nativas.
 
 Referencia de lenguaje: Caffyne Shell (oscuro, paneles flotantes, translucidez medida, esquinas redondeadas). PARALLAX toma el *lenguaje*, nunca assets, iconos ni layouts literales.
 
